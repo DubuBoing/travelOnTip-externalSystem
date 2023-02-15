@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="travelontip-externalsystemFlow" doc:id="51efa2b4-69d2-4941-9236-9ad659395ae6" >
+		<http:listener doc:name="Listener" doc:id="efb24f87-9d71-4a25-9a6c-49c9f2b1ce6c" config-ref="HTTP_Listener_config" path="${http.listener.path}">
+			<http:error-response statusCode="#[vars.statusCode]" >
+				<http:body ><![CDATA[#[vars.errorMsg default "Critical Error"]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<ee:transform doc:name="Transform Message" doc:id="e68612b9-476d-4727-8a44-648f662638b3">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="serviceType"><![CDATA[%dw 2.0
+output application/java
+---
+attributes.uriParams.serviceType]]></ee:set-variable>
+				<ee:set-variable variableName="transactionId"><![CDATA[%dw 2.0
+output application/java
+---
+attributes.headers.transactionId]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="952b2870-6f63-44fd-85c2-e9c6f85c0296" message="Request received on TravelOnTip External System for transactionId  #[vars.transactionId]"/>
+		<choice doc:name="Choice" doc:id="558ddf4a-db64-4cd7-94be-e29fa499e23c" >
+			<when expression='#[vars.serviceType == "routes"]'>
+				<logger level="INFO" doc:name="Logger" doc:id="3326f92c-baa8-45b0-b9ce-150efda84a37" message="Route flow called on TravelOnTip External System for transactionId  #[vars.transactionId]"/>
+				<flow-ref doc:name="Flow Reference" doc:id="68788de7-0ff9-48aa-b780-1186806b81ba" name="TravelOnTip-GetRoutes-implementationFlow"/>
+			</when>
+			<when expression='#[vars.serviceType == "schedules"]'>
+				<logger level="INFO" doc:name="Logger" doc:id="f9b075c0-6f6f-4036-8175-f994569bf0cb" message="Schedule flow called on TravelOnTip External System for transactionId  #[vars.transactionId]"/>
+				<flow-ref doc:name="Flow Reference" doc:id="0713f804-2ec3-4885-884a-78d4cdce3862" name="TravelOnTip-GetSchedules-implementationFlow"/>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger" doc:id="00e5f9a8-f199-44c3-a051-14345b10d929" message="Incorrect URI parameter called on TravelOnTip External System for transactionId  #[vars.transactionId]"/>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="c46df810-01d4-40ae-9ec1-dfa75b9d43a0" message="Response sent on TravelOnTip External System for transactionId  #[vars.transactionId]"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d07b082a-e151-44f8-a8a7-4738c7bb84ea" type="ANY">
+				<logger level="INFO" doc:name="Logger" doc:id="2710537d-6266-4ec4-8527-f978f084d3af" message="Error occured on TravelOnTip External System for #[vars.transactionId]: #[error.errorType] - #[error.errorMessage]"/>
+				<ee:transform doc:name="Transform Message" doc:id="042b4792-6a82-4f47-92ad-e54280f7c6b0" >
+					<ee:message >
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="statusCode" ><![CDATA[%dw 2.0
+output application/json
+---
+500 as Number]]></ee:set-variable>
+						<ee:set-variable variableName="errorMsg" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"ErrorCode": "CE42069",
+	"ErrorMessage": "Error in TravelOnTip System"
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>
