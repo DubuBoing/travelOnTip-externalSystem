@@ -57,27 +57,5 @@ output application/java
 			</otherwise>
 		</choice>
 		<logger level="INFO" doc:name="Response sent" doc:id="c46df810-01d4-40ae-9ec1-dfa75b9d43a0" message="Response sent on TravelOnTip External System for transactionId  #[vars.transactionId]"/>
-		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d07b082a-e151-44f8-a8a7-4738c7bb84ea" type="ANY">
-				<logger level="INFO" doc:name="Logger" doc:id="2710537d-6266-4ec4-8527-f978f084d3af" message="Error occured on TravelOnTip External System for #[vars.transactionId]: #[error.errorType] - #[error.errorMessage]"/>
-				<ee:transform doc:name="Transform Message" doc:id="042b4792-6a82-4f47-92ad-e54280f7c6b0" >
-					<ee:message >
-					</ee:message>
-					<ee:variables >
-						<ee:set-variable variableName="statusCode" ><![CDATA[%dw 2.0
-output application/json
----
-500 as Number]]></ee:set-variable>
-						<ee:set-variable variableName="errorMsg" ><![CDATA[%dw 2.0
-output application/json
----
-{
-	"ErrorCode": "CE42069",
-	"ErrorMessage": "Error in TravelOnTip System"
-}]]></ee:set-variable>
-					</ee:variables>
-				</ee:transform>
-			</on-error-propagate>
-		</error-handler>
 	</flow>
 </mule>
